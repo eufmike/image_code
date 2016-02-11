@@ -1,0 +1,11 @@
+"","region","group","id","mean_intensity"
+"1","DLS","control","control_1.csv",169.401777777778
+"2","DLS","control","control_2.csv",172.644833333333
+"3","DLS","control","control_3.csv",131.509111111111
+"4","DLS","control","control_4.csv",194.703722222222
+"5","DLS","control","control_5.csv",300.869833333333
+"6","DLS","mutant","mutant_1.csv",206.758833333333
+"7","DLS","mutant","mutant_2.csv",120.999111111111
+"8","DLS","mutant","mutant_3.csv",120.686166666667
+"9","DLS","mutant","mutant_4.csv",265.266333333333
+"10","DLS","mutant","mutant_5.csv",148.955277777778

@@ -1,0 +1,405 @@
+---
+title: "Project_report"
+output: pdf_document
+fontsize: 14pt
+classoption: letterpaper
+geometry: margin= 3cm
+---
+# Mean Intensity
+
+```{r, echo = F, message = F}
+library(xlsx)
+library(gdata)
+library(dplyr)
+
+# complie data
+folder <- "mean_intensity_csv"
+folder2 <- list.files(folder)
+
+path.con <- paste(folder, "/", folder2[1], sep = "")
+path.mut <- paste(folder, "/", folder2[2], sep = "")
+
+files.con <- list.files(path.con) 
+files.mut <- list.files(path.mut) 
+
+##files.con
+##files.mut
+
+data.con<- data.frame()
+count <- 1
+for (i in files.con){
+        file.path <- paste(path.con, "/", i, sep = "")
+        ##print(file.path)
+        
+        if(count == 1){
+                data.temp <- read.csv(file.path, header = T)
+                ##print(data.temp)
+                count <- count + 1
+                data.con <- rbind(data.con, data.temp)
+        } else{
+                data.temp <- read.csv(file.path, header = T)
+                head(data.temp)
+                count <- count + 1
+                data.con <- rbind(data.con, data.temp)
+        }
+        
+
+}
+
+data.mut<- data.frame()
+count <- 1
+for (i in files.mut){
+        file.path <- paste(path.mut, "/", i, sep = "")
+        ##print(file.path)
+        
+        if(count == 1){
+                data.temp <- read.csv(file.path, header = T)
+                ##print(data.temp)
+                count <- count + 1
+                data.mut <- rbind(data.mut, data.temp)
+        } else{
+                data.temp <- read.csv(file.path, header = T)
+                head(data.temp)
+                count <- count + 1
+                data.mut <- rbind(data.mut, data.temp)
+        }
+        
+        
+}
+##print(data.con)
+##print(data.mut)
+
+# make id for each brain sections
+id.con <- c(rep(c(files.con[1:4]), each = 54), 
+        rep(c(files.con[5]), 36))
+id.mut <- rep(files.mut, each = 54)
+
+# rename the column
+data.con$id <- id.con
+data.con$group <- "control"
+names(data.con)[1] <- "location"
+
+number <- rep(c(1:9), each = 2)
+relative.location.con <- rep(number, (3*4 + 2*1))
+data.con$rela.loc <- relative.location.con
+
+data.mut$id <- id.mut
+data.mut$group <- "mutant"
+names(data.mut)[1] <- "location"
+
+relative.location.mut <- rep(number, 3*5)
+data.mut$rela.loc <- relative.location.mut
+
+
+# assign location of images
+# DMS: 1~4, DLS: 7~9
+DMS <- c(1:3)
+DLS <- c(7:9)
+
+data.con <- data.con %>%
+        mutate(region = ifelse(rela.loc %in% DMS, "DMS", ifelse(rela.loc %in% DLS, "DLS", "center")))
+data.mut <- data.mut %>%
+        mutate(region = ifelse(rela.loc %in% DMS, "DMS", ifelse(rela.loc %in% DLS, "DLS", "center")))
+
+data <- rbind(data.con, data.mut)
+###names(data)
+data <- data[c(6, 7 , 2, 3, 4, 5, 1, 8, 9 )]
+data$id <- as.factor(data$id)
+data$group <- as.factor(data$group)
+data$region <- as.factor(data$region)
+data$location <- as.factor(data$location)
+data$rela.loc <- as.factor(data$rela.loc)
+###head(data)
+
+```
+Striatum (whole area)
+
+```{r, echo = F}
+# analysis
+# total mean intensity and t-test
+
+data.group <- data %>%
+        group_by(group, id) %>%
+        summarize(mean_intensity =  mean(Mean))
+
+##data.group
+ttest.total <- t.test(mean_intensity ~ group, data = data.group)
+ttest.total
+
+# region-grouped mean intensity
+
+data.group.b <- data %>%
+        group_by(region, group, id) %>%
+        summarize(mean_intensity =  mean(Mean))
+```
+
+
+Dorsal Lateral Striatum (DLS)
+```{r, echo = F}
+
+# DLS
+data.DLS <- data.group.b %>%
+        filter(region == "DLS")
+write.csv(data.DLS, "results/DLS.csv")
+ttest.DLS <- t.test(mean_intensity ~ group, data = data.DLS)
+ttest.DLS
+
+```
+
+Dorsal Medial Striatum (DMS)
+```{r, echo = F}
+# DMS
+data.DMS <- data.group.b %>%
+        filter(region == "DMS")
+write.csv(data.DMS, "results/DMS.csv")
+ttest.DMS <- t.test(mean_intensity ~ group, data = data.DMS)
+ttest.DMS
+```
+
+Center Region
+
+```{r, echo = F}
+# center
+data.center <- data.group.b %>%
+        filter(region == "center")
+write.csv(data.center, "results/center.csv")
+ttest.center <- t.test(mean_intensity ~ group, data = data.center)
+ttest.center
+
+# Export results
+results <- data.frame("region" = c("DLS", "DMS", "center"), 
+                        "p_value" = round(c(ttest.DLS$p.value, ttest.DMS$p.value, ttest.center$p.value), 3))
+```
+
+Summary:
+
+```{r, echo = F}
+results
+```
+
+
+# Occupied Area
+```{r, echo = F, message = F}
+####
+####      ~~~~~ OCCUPIED AREA ~~~~~
+####
+
+
+area_folder <- "occupied_area"
+area_folder2 <- list.files(folder)
+
+path.area.con <- paste(area_folder, "/", folder2[1], sep = "")
+path.area.mut <- paste(area_folder, "/", folder2[2], sep = "")
+
+files.area.con <- list.files(path.area.con) 
+files.area.mut <- list.files(path.area.mut) 
+
+##files.area.con
+##files.area.mut
+
+##print(paste(path.area.con,"/control_1", sep ="" ))
+name_method <- list.files(paste(path.area.con,"/control_1", sep ="" ))
+##print(name_method)
+
+data.area.con.major<- data.frame()
+count_2 <- 1
+for (method in name_method) {
+        ##print(method)
+        
+        data.area.con<- data.frame()
+        count <- 1
+        for (i in files.area.con){
+                file.path <- paste(path.area.con, "/", i, "/", method, sep = "")
+                ##print(file.path)
+        
+                if(count == 1){
+                        data.temp <- read.table(file.path)
+                        ##print(data.temp)
+                        count <- count + 1
+                        data.area.con <- rbind(data.area.con, data.temp)
+                } else{
+                        data.temp <- read.table(file.path)
+                        ##print(data.temp)
+                        count <- count + 1
+                        data.area.con <- rbind(data.area.con, data.temp)
+                }
+        
+        
+        }
+        
+        if (count_2 == 1){
+                data.area.con.major <- (count.method = data.area.con$X.Area)
+        } else {
+                data.area.con.major <- cbind(data.area.con.major, data.area.con$X.Area)
+        }
+                
+        count_2 <- count_2 + 1
+        
+}
+data.area.con.major <- data.frame(data.area.con.major)
+names(data.area.con.major) <- name_method
+data.area.con.major <- 100 - data.area.con.major
+##data.area.con.major
+
+
+data.area.mut.major<- data.frame()
+count_2 <- 1
+for (method in name_method) {
+        ##print(method)
+        
+        data.area.mut<- data.frame()
+        count <- 1
+        for (i in files.area.mut){
+                file.path <- paste(path.area.mut, "/", i, "/", method, sep = "")
+                ##print(file.path)
+                
+                if(count == 1){
+                        data.temp <- read.table(file.path)
+                        ##print(data.temp)
+                        count <- count + 1
+                        data.area.mut <- rbind(data.area.mut, data.temp)
+                } else{
+                        data.temp <- read.table(file.path)
+                        ##print(data.temp)
+                        count <- count + 1
+                        data.area.mut <- rbind(data.area.mut, data.temp)
+                }
+                
+                
+        }
+        
+        if (count_2 == 1){
+                data.area.mut.major <- (count.method = data.area.mut$X.Area)
+        } else {
+                data.area.mut.major <- cbind(data.area.mut.major, data.area.mut$X.Area)
+        }
+        
+        count_2 <- count_2 + 1
+        
+}
+data.area.mut.major <- data.frame(data.area.mut.major)
+names(data.area.mut.major) <- name_method
+data.area.mut.major <- 100 - data.area.mut.major
+
+
+data.area <- rbind(data.area.con.major, data.area.mut.major)
+data.all <- cbind(data, data.area)
+
+
+
+
+
+###############################
+```
+
+```{r, echo = F}
+data.group.a <- data.all %>%
+        group_by(group, id) %>%
+        summarize(Default.txt =  mean(Default.txt), 
+                  Huang.txt = mean(Huang.txt),
+                  Intermodes.txt = mean(Intermodes.txt),
+                  IsoData.txt = mean(IsoData.txt),
+                  Li.txt = mean(Li.txt),
+                  MaxEntropy.txt = mean(MaxEntropy.txt),
+                  Mean.txt = mean(Mean.txt),
+                  ##MinError(I).txt = mean(MinError(I).txt),
+                  Minimum.txt = mean(Minimum.txt),
+                  Moments.txt = mean(Moments.txt),
+                  Otsu.txt = mean(Otsu.txt),
+                  Percentile.txt = mean(Percentile.txt),
+                  RenyiEntropy.txt = mean(RenyiEntropy.txt),
+                  Shanbhag.txt = mean(Shanbhag.txt),
+                  Triangle.txt = mean(Triangle.txt),
+                  Yen.txt = mean(Yen.txt)
+                )
+
+
+# t <- t.test(data.group.a[["Default.txt"]] ~ data.group.a[["group"]])       
+# print(t)
+
+name_method <- c(name_method[1:7], name_method[9:16])  
+```
+Striatum (whole area)
+
+```{r, echo = F}
+
+result.all <- data.frame()
+for (method in name_method){
+        t <- t.test(data.group.a[[method]] ~ data.group.a[["group"]])       
+        data.temp <-data.frame(method = method, p_value = t$p.value)
+        result.all <- rbind(result.all, data.temp) 
+}
+print(result.all)
+
+data.group.a.b <- data.all %>%
+        group_by(region, group, id) %>%
+        summarize(Default.txt =  mean(Default.txt), 
+                  Huang.txt = mean(Huang.txt),
+                  Intermodes.txt = mean(Intermodes.txt),
+                  IsoData.txt = mean(IsoData.txt),
+                  Li.txt = mean(Li.txt),
+                  MaxEntropy.txt = mean(MaxEntropy.txt),
+                  Mean.txt = mean(Mean.txt),
+                  ##MinError(I).txt = mean(MinError(I).txt),
+                  Minimum.txt = mean(Minimum.txt),
+                  Moments.txt = mean(Moments.txt),
+                  Otsu.txt = mean(Otsu.txt),
+                  Percentile.txt = mean(Percentile.txt),
+                  RenyiEntropy.txt = mean(RenyiEntropy.txt),
+                  Shanbhag.txt = mean(Shanbhag.txt),
+                  Triangle.txt = mean(Triangle.txt),
+                  Yen.txt = mean(Yen.txt)
+        )
+```
+
+Dorsal Lateral Striatum (DLS)
+```{r, echo = F}
+# DLS
+data.DLS <- data.group.a.b %>%
+        filter(region == "DLS")
+# write.csv(data.DLS, "results/DLS.csv")
+
+result.DLS <- data.frame()
+for (method in name_method){
+        t <- t.test(data.DLS[[method]] ~ data.DLS[["group"]])       
+        # print(t)
+        data.temp <-data.frame(method = method, p_value = t$p.value)
+        result.DLS <- rbind(result.DLS, data.temp) 
+}
+print(result.DLS)
+```
+
+Dorsal Medial Striatum (DMS)
+```{r, echo = F}
+# DMS
+data.DMS <- data.group.a.b %>%
+        filter(region == "DMS")
+# write.csv(data.DLS, "results/DLS.csv")
+
+result.DMS <- data.frame()
+for (method in name_method){
+        t <- t.test(data.DMS[[method]] ~ data.DMS[["group"]])       
+        # print(t)
+        data.temp <-data.frame(method = method, p_value = t$p.value)
+        result.DMS <- rbind(result.DMS, data.temp) 
+}
+print(result.DMS)
+```
+
+Center Region
+```{r, echo = F}
+# center
+data.center <- data.group.a.b %>%
+        filter(region == "center")
+# write.csv(data.DLS, "results/DLS.csv")
+
+result.center <- data.frame()
+for (method in name_method){
+        t <- t.test(data.center[[method]] ~ data.center[["group"]])       
+        # print(t)
+        data.temp <-data.frame(method = method, p_value = t$p.value)
+        result.center <- rbind(result.center, data.temp) 
+}
+print(result.center)
+
+```
